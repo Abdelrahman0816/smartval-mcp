@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartval-mcp
+  labels: { app: smartval-mcp }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: smartval-mcp }
+  template:
+    metadata:
+      labels: { app: smartval-mcp }
+    spec:
+      containers:
+        - name: mcp
+          image: smartval-mcp:0.1.0
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "smartval.mcp_server", "--http", "--host", "0.0.0.0", "--port", "8001"]
+          env:
+            - name: SMARTVAL_API_URL
+              value: http://smartval-api:8000
+          ports: [{ containerPort: 8001 }]
+          readinessProbe:
+            tcpSocket: { port: 8001 }
+            initialDelaySeconds: 3
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartval-mcp
+spec:
+  selector: { app: smartval-mcp }
+  ports: [{ port: 8001, targetPort: 8001 }]
